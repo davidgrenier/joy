@@ -156,3 +156,45 @@ lst2
     (recur (tail l) (dec n))))
 
 (nthr alltrig 99)
+
+(defn rand-ints [n]
+  (take n (repeatedly #(rand-int n))))
+
+(defn sort-parts [work]
+  (lazy-seq
+    (loop [[part & parts] work]
+      (if-let [[pivot & xs] (seq part)]
+        (let [smaller? #(< % pivot)]
+          (recur (list*
+                  (filter smaller? xs)
+                   pivot
+                   (remove smaller? xs)
+                   parts)))
+        (when-let [[x & parts] parts]
+          (cons x (sort-parts parts)))))))
+
+(defn qsort [xs]
+  (sort-parts (list xs)))
+
+(defn sink [x xs]
+  (loop [xs xs
+         kont identity]
+    (if-let [[head & tail] (seq xs)]
+      (if (< x head)
+        (recur tail #(kont (conj % head)))
+        (kont (conj xs x)))
+      (kont (list x)))))
+
+(defn lowestN [n xs]
+  (loop [xs xs
+         values ()]
+    (if-let [[x & xs] (seq xs)]
+      (let [values (sink x values)]
+        (recur xs (drop (- (count values) n) values)))
+      values)))
+
+(def my-ints (time (rand-ints 1000000)))
+(defn ignore [x] ())
+(time (ignore (lowestN 3 my-ints)))
+(time (ignore (vec (take 3 (sort my-ints)))))
+(time (ignore (vec (take 100 (qsort my-ints)))))
